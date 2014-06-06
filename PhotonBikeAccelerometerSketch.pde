@@ -44,6 +44,8 @@ int framesSinceEmit = 0;
 int frameInterval = 1;
 int frameIntervalIncr = 10;
 int maxFrameInterval = 120;
+float sensitivity = 1;
+float recentAdds = 1;
 float speed;
 color lineColor;
 KetaiSensor sensor;
@@ -51,7 +53,7 @@ DeviceRegistry registry;
 TestObserver testObserver;
 
 void setup() {
-  size(400, 400);
+  size(400, 660); // needs to be a multiple of 330
   colorMode(RGB, 100);
   orientation(PORTRAIT);
   final View surfaceView = this.getSurfaceView();
@@ -73,6 +75,7 @@ void setup() {
 void emitLines() {
   if (framesSinceEmit > frameInterval) {
     framesSinceEmit = 0;
+    recentAdds++;
 //    frameInterval += frameIntervalIncr;
 //    if (frameInterval > maxFrameInterval){
 //      frameInterval = 1;
@@ -98,6 +101,16 @@ void draw() {
   emitLines();
   removeLines();
   //background(0,0,0);
+  recentAdds*=0.95;
+  
+  if (recentAdds > 3) {
+     sensitivity *= 0.95; 
+  }
+  
+  if (recentAdds < 1) {
+     sensitivity *= 1.001; 
+  }
+  
   noStroke();
   rectMode(CORNERS);
   fill(color(0,0,0,10));
@@ -116,7 +129,7 @@ void onAccelerometerEvent(float x, float y, float z)
 {
   float total = (abs(x) + abs(y) + abs(z)) - 9.81;
   lineColor = color(abs(x) * 10, abs(y) * 10, abs(z) * 10);
-  frameInterval = int(100 - (total*10));
+  frameInterval = int(100 - (total*sensitivity*10));
   speed = total;
   
 }
