@@ -103,11 +103,11 @@ void draw() {
   //background(0,0,0);
   recentAdds*=0.95;
   
-  if (recentAdds > 3) {
+  if (recentAdds > 1) {
      sensitivity *= 0.95; 
   }
   
-  if (recentAdds < 1) {
+  if (recentAdds < 0.5) {
      sensitivity *= 1.001; 
   }
   
@@ -130,6 +130,6 @@ void onAccelerometerEvent(float x, float y, float z)
   float total = (abs(x) + abs(y) + abs(z)) - 9.81;
   lineColor = color(abs(x) * 10, abs(y) * 10, abs(z) * 10);
   frameInterval = int(100 - (total*sensitivity*10));
-  speed = total;
+  speed = total*sqrt(sensitivity);
   
 }
