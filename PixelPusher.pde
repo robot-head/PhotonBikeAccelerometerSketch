@@ -15,6 +15,9 @@ void scrape() {
   if (testObserver.hasStrips) {
     registry.startPushing();
     List<Strip> strips = registry.getStrips();
+    if (strips.size() == 0) {
+      return;
+    }
     
     // yscale = how many pixels of y == one led strip.
     // xscale = how many pixels of x == one led pixel.
