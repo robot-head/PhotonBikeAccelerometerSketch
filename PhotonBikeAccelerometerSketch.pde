@@ -10,6 +10,7 @@ import ketai.data.*;
 import ketai.net.bluetooth.*;
 
 import java.util.*;
+import android.view.View;
 import com.heroicrobot.dropbit.registry.*;
 import com.heroicrobot.dropbit.devices.pixelpusher.Pixel;
 import com.heroicrobot.dropbit.devices.pixelpusher.Strip;
@@ -53,6 +54,13 @@ void setup() {
   size(400, 400);
   colorMode(RGB, 100);
   orientation(PORTRAIT);
+  final View surfaceView = this.getSurfaceView();
+  runOnUiThread(new Runnable() {
+    public void run() {
+      surfaceView.setKeepScreenOn(true);
+    }
+  });
+  
   lines = new ArrayList<Line>();
   sensor = new KetaiSensor(this);
   sensor.start();
