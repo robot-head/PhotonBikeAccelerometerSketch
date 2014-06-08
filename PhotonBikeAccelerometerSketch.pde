@@ -39,7 +39,40 @@ class Line {
   }
 }
 
+class ThreeVector {
+   float x;
+   float y;
+   float z;
+   ThreeVector(float x, float y, float z) {
+    this.x=x;
+    this.y=y;
+    this.z=z; 
+   }
+   float magnitude() {
+     return sqrt(pow(x,2) + pow(y,2) + pow(z,2));
+   }
+   void add(ThreeVector addend) {
+      this.x += addend.x;
+      this.y += addend.y;
+      this.z += addend.z;
+   }
+   void subtract(ThreeVector subtrahend) {
+      this.x -= subtrahend.x;
+      this.y -= subtrahend.y;
+      this.z -= subtrahend.z;
+   }
+   void divide(float divisor) {
+    this.x /= divisor;
+    this.y /= divisor;
+    this.z /= divisor; 
+   }
+}
+
+
+float gravityX, gravityY, gravityZ;
+ArrayList<ThreeVector> accelFifo;
 ArrayList<Line> lines;
+ThreeVector integrator;
 int framesSinceEmit = 0;
 int frameInterval = 1;
 int frameIntervalIncr = 10;
@@ -51,8 +84,11 @@ color lineColor;
 KetaiSensor sensor;
 DeviceRegistry registry;
 TestObserver testObserver;
+int ringBufferSize = 256;
 
 void setup() {
+  accelFifo = new ArrayList<ThreeVector>();
+  integrator = new ThreeVector(0,0,0);
   size(400, 660); // needs to be a multiple of 330
   colorMode(RGB, 100);
   orientation(PORTRAIT);
@@ -103,11 +139,11 @@ void draw() {
   //background(0,0,0);
   recentAdds*=0.95;
   
-  if (recentAdds > 1) {
+  if (recentAdds > 5) {
      sensitivity *= 0.95; 
   }
   
-  if (recentAdds < 0.5) {
+  if (recentAdds < 1) {
      sensitivity *= 1.001; 
   }
   
@@ -124,11 +160,39 @@ void draw() {
   
 }
 
+void onGravityEvent(float x, float y, float z)
+{
+  gravityX = x;
+  gravityY = y;
+  gravityZ = z;
+}
 
 void onAccelerometerEvent(float x, float y, float z)
 {
-  float total = (abs(x) + abs(y) + abs(z)) - 9.81;
-  lineColor = color(abs(x) * 10, abs(y) * 10, abs(z) * 10);
+  ThreeVector v = new ThreeVector(x,y,z);
+  accelFifo.add(v);
+  if (accelFifo.size() > 256) {
+    accelFifo.remove(0);
+  }
+   
+  // simple kalman filter
+  ThreeVector k = new ThreeVector(0,0,0);
+  for (ThreeVector p: accelFifo)
+    k.add(p);
+  k.divide(float(accelFifo.size()));
+  
+  ThreeVector gravity = new ThreeVector(gravityX, gravityY, gravityZ);
+  k.subtract(gravity);
+  integrator.add(k);
+
+  float total = v.magnitude() - 9.81;
+  
+  // protect against integrator windup
+  integrator.divide(1.1);
+  
+  println("Gyro = "+gravityX+", "+gravityY+", "+gravityZ+" Acceleration = "+x+", "+y+", "+z+", integrated velocity = "+integrator.x+", "+integrator.y+", "+integrator.z+" total = "+total);
+
+  lineColor = color(abs(integrator.x) % 256, abs(integrator.y) %256, abs(integrator.z) % 256);
   frameInterval = int(100 - (total*sensitivity*10));
   speed = total*sqrt(sensitivity);
   
